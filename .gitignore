@@ -1,0 +1,53 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# 环境与密钥
+.env
+*.pem
+*.key
+
+# 日志与临时
+logs/
+*.log
+tmp/
+*.tmp
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# 数据库/备份
+*.sql.bak
+backup/
+
+# OS
+Thumbs.db
+.DS_Store
+
+# 测试产物
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Scrapy
+.scrapy/
+collector/*.json
+
+# 前端
+frontend/node_modules/
+frontend/dist/
+frontend/.npm-cache/
+
+# 临时验证脚本与输出产物
+tmp_*
+verify_*.py
+*_out.txt
+vd_out.txt
+vd2_out.txt
+unpacked_scheme/

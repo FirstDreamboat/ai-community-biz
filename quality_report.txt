@@ -1,0 +1,58 @@
+== 商机相关性分布 ==
+  rel= 高 : 7
+  rel= 低 : 48
+  rel= 中 : 9
+contents 为空的商机数: 0
+== 商机等级分布 ==
+  level= low : 39
+  level= medium : 25
+== 商机核验状态 ==
+  verify= 0 : 1
+  verify= 1 : 63
+== 低质商机明细 ==
+O 64 |rel=低 |type=房屋建筑 |cont=["其他"] |score=39.5 | 乌鲁木齐市公共资源交易网
+O 62 |rel=低 |type=地下管网改造 |cont=[] |score=39.5 | 乌鲁木齐市公共资源交易网
+O 59 |rel=低 |type=None |cont=[] |score=29.5 | 天津市公共资源交易平台
+O 58 |rel=低 |type=None |cont=[] |score=46.5 | 天津市公共资源交易平台
+O 57 |rel=低 |type=None |cont=[] |score=38.5 | 天津市公共资源交易平台
+O 56 |rel=低 |type=None |cont=[] |score=32.5 | 天津市公共资源交易平台
+O 55 |rel=低 |type=None |cont=[] |score=42.5 | 天津市公共资源交易平台
+O 54 |rel=低 |type=None |cont=[] |score=38.5 | 天津市公共资源交易平台
+O 53 |rel=低 |type=None |cont=[] |score=38.5 | 天津市公共资源交易平台
+O 52 |rel=低 |type=None |cont=[] |score=38.5 | 天津市公共资源交易平台
+O 51 |rel=低 |type=None |cont=[] |score=38.5 | 天津市公共资源交易平台
+O 50 |rel=低 |type=None |cont=[] |score=19.5 | 天津市公共资源交易平台
+O 49 |rel=低 |type=None |cont=[] |score=19.5 | 天津市公共资源交易平台
+O 48 |rel=低 |type=道路恢复 |cont=[] |score=19.5 | 天津市公共资源交易平台
+O 47 |rel=低 |type=None |cont=[] |score=19.5 | 天津市公共资源交易平台
+O 46 |rel=低 |type=None |cont=[] |score=19.5 | 天津市公共资源交易平台
+O 45 |rel=低 |type=None |cont=[] |score=19.5 | 天津市公共资源交易平台
+O 44 |rel=低 |type=None |cont=[] |score=19.5 | 天津市公共资源交易平台
+O 43 |rel=低 |type=None |cont=[] |score=19.5 | 天津市公共资源交易平台
+O 40 |rel=低 |type=供水管网系统改造 |cont=[] |score=39.5 | [WXXQ202604006-X02]硕放片区供水管网系统改造项目施工总承包
+O 38 |rel=低 |type=桥梁安全整治 |cont=[] |score=46.5 | [WXXQ202608003-X01]2026年新吴区上跨高速桥梁安全整治工程施工
+O 37 |rel=低 |type=城中村改造 |cont=[] |score=25.5 | 大连市公共资源交易系统
+O 36 |rel=低 |type=城中村改造 |cont=[] |score=39.5 | 大连市公共资源交易系统
+O 35 |rel=低 |type=城中村改造 |cont=[] |score=25.5 | 大连市公共资源交易系统
+O 34 |rel=低 |type=None |cont=[] |score=39.5 | 大连市公共资源交易系统
+O 33 |rel=低 |type=None |cont=["绿化", "其他"] |score=39.5 | 国家级园区明水经济开发区龙山创新港产业园基础设施建设项目A2组团建筑(第二批)A2地块室外
+O 30 |rel=低 |type=None |cont=["绿化"] |score=35.5 | 山东大学龙山校区（创新港）学生宿舍建设项目 A3、B1 组团西侧配套道路道路绿化工程
+O 25 |rel=低 |type=None |cont=[] |score=46.5 | 新桥集成电路西区产业园及配套项目-二期工程设计招标公告（评定分离）_全国公共资源交易平台（
+O 24 |rel=低 |type=河道治理工程 |cont=[] |score=49.5 | 天河肥西县治理工程招标公告_全国公共资源交易平台（安徽省·合肥市）
+O 23 |rel=低 |type=城镇污水收集处理工程 |cont=[] |score=46.5 | 长丰县城镇污水收集处理工程施工招标公告（评定分离）_全国公共资源交易平台（安徽省·合肥市）
+== 公告来源 TOP ==
+   中国政府采购网 : 76
+   全国公共资源交易平台 : 76
+   中国安防行业网 : 63
+   CHIMA中国医院协会信息专委会 : 50
+   贵阳市公共资源交易中心 : 50
+   安徽省公共资源交易集团 : 50
+   中国智慧城市网 : 50
+   中国智能家居产业联盟 : 50
+   重庆市公共资源交易网 : 50
+   陕西省公共资源交易中心 : 50
+   越秀服务官网 : 50
+   新疆维吾尔自治区公共资源交易网 : 50
+   大连市公共资源交易中心 : 50
+   天津市公共资源交易中心 : 50
+   青海省公共资源交易平台 : 50

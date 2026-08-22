@@ -1,0 +1,4 @@
+npm error code EINVALIDTAGNAME
+npm error Invalid tag name ";" of package ";": Tags may not have any characters that encodeURIComponent encodes.
+npm error Log files were not written due to an error writing to the directory: E:\nodejs\node_cache\_logs
+npm error You can rerun the command with `--loglevel=verbose` to see the logs in your terminal
