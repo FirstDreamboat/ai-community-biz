@@ -51,3 +51,9 @@ verify_*.py
 vd_out.txt
 vd2_out.txt
 unpacked_scheme/
+
+# 运行时数据（每日LLM配额计数）
+backend/.llm_quota.json
+
+# 参赛/业务文档（含个人信息，不进版本库）
+*.docx
