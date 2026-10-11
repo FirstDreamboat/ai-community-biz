@@ -10,7 +10,7 @@ from app.api.deps import ok
 from app.core.database import get_db
 from app.core.security import get_current_user
 from app.models.sys import SysUser
-from app.services import intel_service
+from app.services import intel_service, winback_service
 
 router = APIRouter(prefix="/intel", tags=["智能商机挖掘"])
 
@@ -250,6 +250,22 @@ def create_lead(
     return ok(intel_service.create_sales_lead(db, body.model_dump()))
 
 
+class WinbackMineIn(BaseModel):
+    limit: int = 8
+
+
+@router.post("/sales-leads/winback-mine")
+async def mine_winback_leads(
+    body: WinbackMineIn,
+    db: Session = Depends(get_db),
+    _: SysUser = Depends(get_current_user),
+):
+    """中标反推：从已采集的中标/成交公告中 AI 挖掘销售线索。"""
+    limit = max(1, min(body.limit, 15))
+    result = await winback_service.mine_winback_leads(db, limit=limit)
+    return ok(result)
+
+
 @router.put("/sales-leads/{lid}")
 def update_lead(
     lid: int,
@@ -344,6 +360,21 @@ def create_hotspot(
     _: SysUser = Depends(get_current_user),
 ):
     return ok(intel_service.create_appeal_hotspot(db, body.model_dump()))
+
+
+class AppealImportIn(BaseModel):
+    text: str
+    period: str | None = None
+
+
+@router.post("/appeal-hotspots/import")
+def import_hotspots(
+    body: AppealImportIn,
+    db: Session = Depends(get_db),
+    _: SysUser = Depends(get_current_user),
+):
+    """批量导入诉求热点：每行 小区,省份,城市,次数,链接?；按小区去重累加。"""
+    return ok(intel_service.import_appeal_hotspots(db, body.text, body.period))
 
 
 @router.put("/appeal-hotspots/{hid}")

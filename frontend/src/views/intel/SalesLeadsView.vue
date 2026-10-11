@@ -11,6 +11,9 @@
           </el-select>
           <el-button type="primary" @click="loadData">查询</el-button>
           <el-button type="success" @click="openDialog()">上报线索</el-button>
+          <el-button type="warning" :loading="mining" @click="mineWinback">
+            AI 中标反推
+          </el-button>
         </div>
       </div>
 
@@ -118,7 +121,7 @@
 <script setup>
 import { onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { listSalesLeads, createSalesLead, updateSalesLead, deleteSalesLead } from '@/api/intel'
+import { listSalesLeads, createSalesLead, updateSalesLead, deleteSalesLead, mineWinbackLeads } from '@/api/intel'
 
 const statusText = { new: '新线索', following: '跟进中', won: '已成交', lost: '已流失' }
 const items = ref([])
@@ -170,6 +173,26 @@ const remove = (row) => {
     ElMessage.success('已删除')
     loadData()
   })
+}
+
+const mining = ref(false)
+const mineWinback = async () => {
+  mining.value = true
+  try {
+    const res = await mineWinbackLeads({ limit: 6 })
+    const d = res.data
+    if (d.message) {
+      ElMessage.warning(d.message)
+      return
+    }
+    ElMessage.success(
+      `扫描 ${d.scanned} 条中标公告：生成线索 ${d.created} 条，跳过 ${d.skipped} 条（低相关）` +
+      (d.failed ? `，失败 ${d.failed} 条` : '')
+    )
+    loadData()
+  } finally {
+    mining.value = false
+  }
 }
 
 onMounted(loadData)

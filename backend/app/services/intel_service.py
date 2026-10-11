@@ -441,6 +441,49 @@ def list_appeal_hotspots(db: Session, keyword=None, province=None, status=None, 
     return _page(items, total)
 
 
+def import_appeal_hotspots(db: Session, text: str, period: str | None = None) -> dict:
+    """批量导入12345诉求热点。行格式：小区,省份,城市,次数,链接?；按小区去重累加。
+
+    数据来源为人工导入（12345工单/新闻舆情整理），非自动采集。
+    """
+    created = updated = 0
+    errors = []
+    for lineno, raw in enumerate((text or "").splitlines(), start=1):
+        line = raw.strip()
+        if not line:
+            continue
+        parts = [p.strip() for p in line.split(",")]
+        if len(parts) < 4 or not parts[0]:
+            errors.append(f"第{lineno}行格式错误：{line[:50]}")
+            continue
+        community, province, city = parts[0], parts[1], parts[2]
+        try:
+            count = int(float(parts[3]))
+        except ValueError:
+            errors.append(f"第{lineno}行诉求数非数字：{parts[3]}")
+            continue
+        source_url = parts[4] if len(parts) > 4 else None
+        existing = db.execute(
+            select(AppealHotspot).where(
+                AppealHotspot.community == community, AppealHotspot.deleted == 0)
+        ).scalar_one_or_none()
+        if existing:
+            existing.appeal_count = (existing.appeal_count or 0) + count
+            existing.hot_score = min(existing.appeal_count * 5, 100)
+            existing.period = period or existing.period
+            if source_url:
+                existing.source_url = source_url
+            updated += 1
+        else:
+            db.add(AppealHotspot(community=community, province=province or None,
+                                 city=city or None, appeal_count=count,
+                                 hot_score=min(count * 5, 100),
+                                 source_url=source_url, period=period))
+            created += 1
+    db.commit()
+    return {"created": created, "updated": updated, "errors": errors}
+
+
 def create_appeal_hotspot(db: Session, data: dict) -> dict:
     h = AppealHotspot(**data)
     db.add(h)

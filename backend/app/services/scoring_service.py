@@ -44,13 +44,83 @@ def load_weights(db: Session) -> dict:
     return dict(settings.SCORING_WEIGHTS)
 
 
+def _char_ngrams(text: str, n: int = 2) -> list[str]:
+    """中文/混合文本字符 n-gram 切分（向量化的最小语义单元）。"""
+    import re as _re
+
+    text = _re.sub(r"\s+", "", text or "")
+    if len(text) < n:
+        return [text] if text else []
+    return [text[i:i + n] for i in range(len(text) - n + 1)]
+
+
+def _tfidf_cosine(need_text: str, docs: list[str]) -> tuple[float, int]:
+    """轻量 TF-IDF 余弦相似度（字符 2-gram）：需求文本 vs 各产品文档。
+
+    零外部依赖的"向量检索"真实现：语料小（产品库通常 <100 条），
+    即席计算毫秒级。返回 (最高相似度 0-1, 命中的产品下标)。
+    """
+    import math
+
+    need_grams = _char_ngrams(need_text)
+    if not need_grams or not docs:
+        return 0.0, -1
+    doc_grams = [_char_ngrams(d) for d in docs]
+    n_docs = len(doc_grams) + 1
+    df: dict[str, int] = {}
+    for grams in [*doc_grams, need_grams]:
+        for g in set(grams):
+            df[g] = df.get(g, 0) + 1
+    idf = {g: math.log(n_docs / c) + 1.0 for g, c in df.items()}
+
+    def _vec(grams: list[str]) -> dict[str, float]:
+        tf: dict[str, int] = {}
+        for g in grams:
+            tf[g] = tf.get(g, 0) + 1
+        return {g: (c / len(grams)) * idf.get(g, 1.0) for g, c in tf.items()}
+
+    need_vec = _vec(need_grams)
+    best, best_idx = 0.0, -1
+    for idx, grams in enumerate(doc_grams):
+        if not grams:
+            continue
+        dvec = _vec(grams)
+        common = set(need_vec) & set(dvec)
+        if not common:
+            continue
+        dot = sum(need_vec[g] * dvec[g] for g in common)
+        n1 = math.sqrt(sum(v * v for v in need_vec.values()))
+        n2 = math.sqrt(sum(v * v for v in dvec.values()))
+        if n1 and n2:
+            sim = dot / (n1 * n2)
+            if sim > best:
+                best, best_idx = sim, idx
+    return min(best, 1.0), best_idx
+
+
 def demand_match_score(
     profile: ProjectProfile, knowledge: list[ProductKnowledge]
 ) -> tuple[float, list]:
-    """需求匹配度（0-1）：标签粗匹配 + 向量深度匹配的简化实现。"""
+    """需求匹配度（0-1）：标签 Jaccard 粗匹配 + TF-IDF 向量余弦深度匹配（v2）。"""
     needs = set(profile.contents or [])
-    if not needs:
+    tech = profile.tech_params or []
+    if not needs and not tech:
         return 0.0, []
+
+    # 第二轮：TF-IDF 向量余弦（需求文本 vs 产品知识库）
+    need_text = " ".join([*needs, *tech])
+    cosine, vec_idx = 0.0, -1
+    if need_text.strip() and knowledge:
+        docs = [
+            " ".join([
+                k.title or "",
+                k.category or "",
+                " ".join(k.tags or []),
+                (k.content or "")[:500],
+            ])
+            for k in knowledge
+        ]
+        cosine, vec_idx = _tfidf_cosine(need_text, docs)
 
     # 第一轮：需求标签与产品标签的 Jaccard 匹配
     best_jaccard = 0.0
@@ -67,7 +137,14 @@ def demand_match_score(
             if j > best_jaccard:
                 best_jaccard = j
                 matched_tags = list(inter)
-    return best_jaccard, matched_tags
+
+    # 融合两路匹配：标签精确命中优先，向量相似补充（0.85 封顶防误判满分）
+    demand = max(best_jaccard, cosine * 0.85)
+    if cosine > best_jaccard and vec_idx >= 0:
+        matched_tags = matched_tags or [
+            ("语义匹配:" + (knowledge[vec_idx].title or ""))[:40]
+        ]
+    return min(demand, 1.0), matched_tags
 
 
 def budget_score(budget: Decimal | None) -> float:
@@ -148,7 +225,7 @@ def competition_score(profile: ProjectProfile, db: Session) -> float:
     return 10.0
 
 
-def score_profile(db: Session, profile: ProjectProfile, rules_version: str = "v1") -> dict:
+def score_profile(db: Session, profile: ProjectProfile, rules_version: str = "v2") -> dict:
     """对单个项目画像计算商机评分。"""
     knowledge = db.execute(
         select(ProductKnowledge).where(ProductKnowledge.status == 1)

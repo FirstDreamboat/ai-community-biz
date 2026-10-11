@@ -3,12 +3,16 @@
     <el-page-header @back="$router.back()" style="margin-bottom: 16px">
       <template #content>
         <span class="page-title">{{ detail.opportunity?.title || '商机详情' }}</span>
-        <el-tag v-if="detail.opportunity" :type="levelTag(detail.opportunity.level)" size="small" style="margin-left: 12px">
-          {{ levelName(detail.opportunity.level) }} · {{ detail.opportunity.total_score }}分
+        <el-tag :type="statusTag(detail.opportunity?.status)" size="small" effect="dark" style="margin-left: 8px">
+          {{ statusNames[detail.opportunity?.status] || detail.opportunity?.status || '未知' }}
+        </el-tag>
+        <el-tag v-if="detail.opportunity?.owner_id" type="info" size="small" style="margin-left: 8px">
+          负责人：{{ detail.owner_name || ('#' + detail.opportunity.owner_id) }}
         </el-tag>
       </template>
       <template #extra>
         <el-button type="primary" @click="openFollow">新增跟进</el-button>
+        <el-button :loading="recalcing" @click="recalc">重新评分</el-button>
         <el-button v-if="auth.isAdmin" @click="openAssign">分配商机</el-button>
       </template>
     </el-page-header>
@@ -118,6 +122,24 @@
           </el-table>
           <el-empty v-else description="暂无竞品动态" :image-size="60" />
         </el-card>
+
+        <el-card style="margin-top: 16px">
+          <div class="card-title">推送记录</div>
+          <el-table v-if="(pushRecords || []).length" :data="pushRecords" size="small">
+            <el-table-column prop="push_channel" label="渠道" width="90" />
+            <el-table-column label="状态" width="90">
+              <template #default="{ row }">
+                <el-tag size="small" :type="row.status === 'sent' ? 'success' : row.status === 'failed' ? 'danger' : 'info'">
+                  {{ pushStatusText[row.status] || row.status }}
+                </el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column label="时间">
+              <template #default="{ row }">{{ fmtTime(row.created_at) }}</template>
+            </el-table-column>
+          </el-table>
+          <el-empty v-else description="该商机暂无推送记录" :image-size="60" />
+        </el-card>
       </el-col>
     </el-row>
 
@@ -169,7 +191,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import EChart from '@/components/EChart.vue'
-import { getOpportunity, followUp, assignOpportunity } from '@/api/opportunity'
+import { getOpportunity, followUp, assignOpportunity, recalcOpportunity } from '@/api/opportunity'
 import { getAnnouncement } from '@/api/announcement'
 import { listUsers } from '@/api/system'
 import { useAuthStore } from '@/stores/auth'
@@ -181,6 +203,7 @@ const detail = ref({})
 const announcement = ref(null)
 const followLogs = ref([])
 const competitors = ref([])
+const pushRecords = ref([])
 
 const followVisible = ref(false)
 const assignVisible = ref(false)
@@ -204,6 +227,8 @@ const levelName = (l) => ({ high: '高', medium: '中', low: '低' }[l] || l)
 const levelTag = (l) => ({ high: 'danger', medium: 'warning', low: 'success' }[l] || 'info')
 const scoreClass = (s) => (s >= 80 ? 'score-high' : s >= 60 ? 'score-medium' : 'score-low')
 const timelineType = (a) => (a.includes('中标') ? 'success' : a.includes('丢标') ? 'danger' : 'primary')
+const statusTag = (s) => ({ new: 'info', following: 'primary', bid: 'warning', won: 'success', lost: 'danger', closed: 'info' }[s] || 'info')
+const pushStatusText = { pending: '待发送', sent: '已发送', failed: '发送失败' }
 
 const scoreBarOption = computed(() => {
   const s = detail.value.score_detail || {}
@@ -238,6 +263,7 @@ const loadDetail = async () => {
     detail.value = res.data || {}
     followLogs.value = detail.value.follow_logs || []
     competitors.value = detail.value.competitors || []
+    pushRecords.value = detail.value.push_records || []
     if (detail.value.opportunity?.announcement_id) {
       getAnnouncement(detail.value.opportunity.announcement_id)
         .then((r) => { announcement.value = r.data || null })
@@ -251,6 +277,18 @@ const loadDetail = async () => {
 const openSource = () => {
   if (announcement.value && announcement.value.source_url) {
     window.open(announcement.value.source_url, '_blank', 'noopener')
+  }
+}
+
+const recalcing = ref(false)
+const recalc = async () => {
+  recalcing.value = true
+  try {
+    const res = await recalcOpportunity(route.params.id)
+    ElMessage.success('已按最新规则重新评分：' + res.data.total_score + ' 分')
+    loadDetail()
+  } finally {
+    recalcing.value = false
   }
 }
 

@@ -12,11 +12,12 @@
           </el-select>
           <el-button type="primary" @click="loadData">查询</el-button>
           <el-button type="success" @click="openDialog()">新增热点</el-button>
+          <el-button type="warning" @click="importVisible = true">批量导入</el-button>
         </div>
       </div>
 
       <el-alert type="warning" :closable="false" style="margin-bottom: 12px"
-                title="聚合 12345 热线诉求：小区诉求密度越高，门禁/对讲/安防改造意愿越强。高热点小区优先拜访业主委员会与物业。" />
+                title="数据来源说明：本模块数据为人工导入（12345 工单/新闻舆情整理），非自动采集。小区诉求密度越高，门禁/对讲/安防改造意愿越强，高热点小区优先拜访业委会与物业。" />
 
       <el-table :data="items" v-loading="loading" stripe>
         <el-table-column prop="community" label="小区/社区" width="150" show-overflow-tooltip />
@@ -111,19 +112,37 @@
         <el-button type="primary" @click="save">保存</el-button>
       </template>
     </el-dialog>
+
+    <el-dialog v-model="importVisible" title="批量导入诉求热点" width="640px">
+      <el-alert type="info" :closable="false" style="margin-bottom: 12px"
+                title="每行一条：小区名称,省份,城市,诉求次数,来源链接(可选)。已存在的小区会自动累加诉求数。" />
+      <el-input v-model="importText" type="textarea" :rows="8"
+                placeholder="示例：&#10;幸福里小区,福建省,厦门市,23,https://example.com/news/1&#10;金域华府,安徽省,合肥市,15" />
+      <el-form-item label="统计周期" label-width="90px" style="margin-top: 12px">
+        <el-input v-model="importPeriod" placeholder="如：2026年9月" style="width: 220px" />
+      </el-form-item>
+      <template #footer>
+        <el-button @click="importVisible = false">取消</el-button>
+        <el-button type="primary" :loading="importing" @click="doImport">导入</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
 import { onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { listAppealHotspots, createAppealHotspot, updateAppealHotspot, deleteAppealHotspot } from '@/api/intel'
+import { listAppealHotspots, createAppealHotspot, updateAppealHotspot, deleteAppealHotspot, importAppealHotspots } from '@/api/intel'
 
 const items = ref([])
 const total = ref(0)
 const loading = ref(false)
 const query = reactive({ keyword: '', sort: 'hot', page: 1, page_size: 20 })
 const dialog = reactive({ visible: false, form: {} })
+const importVisible = ref(false)
+const importText = ref('')
+const importPeriod = ref('')
+const importing = ref(false)
 
 const emptyForm = () => ({
   id: null, community: '', province: '', city: '', appeal_count: 0, hot_score: 0,
@@ -168,6 +187,30 @@ const remove = (row) => {
     ElMessage.success('已删除')
     loadData()
   })
+}
+
+const doImport = async () => {
+  if (!importText.value.trim()) {
+    ElMessage.warning('请粘贴导入内容')
+    return
+  }
+  importing.value = true
+  try {
+    const res = await importAppealHotspots({ text: importText.value, period: importPeriod.value || null })
+    const d = res.data
+    let msg = `导入完成：新建 ${d.created} 条，更新 ${d.updated} 条`
+    if (d.errors && d.errors.length) {
+      ElMessage.warning({ message: msg + `；${d.errors.length} 行格式错误`, duration: 5000 })
+      console.warn('导入错误行：', d.errors)
+    } else {
+      ElMessage.success(msg)
+    }
+    importVisible.value = false
+    importText.value = ''
+    loadData()
+  } finally {
+    importing.value = false
+  }
 }
 
 onMounted(loadData)

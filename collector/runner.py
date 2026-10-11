@@ -361,6 +361,9 @@ def fetch(url: str, interval: float = DEFAULT_INTERVAL,
     use_proxy=True 且已配置代理池时，通过代理池出口请求
     （合规：仍遵守 robots/限速/重试，不用于绕过封禁验证码）。
     """
+    # IRI -> URI：URL 中的非 ASCII 字符（如中文查询参数 cate=矿业权）必须
+    # 百分号编码，否则 urllib 以 ascii 发送请求行会直接报 UnicodeEncodeError
+    url = urllib.parse.quote(url, safe=":/?#[]@!$&'()*+,;=%")
     last_err = None
     proxy = _get_proxy() if use_proxy else None
     opener = None

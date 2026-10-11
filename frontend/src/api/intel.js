@@ -23,6 +23,7 @@ export const listSalesLeads = (params) => request.get('/intel/sales-leads', { pa
 export const createSalesLead = (data) => request.post('/intel/sales-leads', data)
 export const updateSalesLead = (id, data) => request.put(`/intel/sales-leads/${id}`, data)
 export const deleteSalesLead = (id) => request.delete(`/intel/sales-leads/${id}`)
+export const mineWinbackLeads = (data) => request.post('/intel/sales-leads/winback-mine', data)
 
 // 竞品中标后续追踪
 export const listCompetitorTracks = (params) => request.get('/intel/competitor-tracks', { params })
@@ -36,3 +37,4 @@ export const listAppealHotspots = (params) => request.get('/intel/appeal-hotspot
 export const createAppealHotspot = (data) => request.post('/intel/appeal-hotspots', data)
 export const updateAppealHotspot = (id, data) => request.put(`/intel/appeal-hotspots/${id}`, data)
 export const deleteAppealHotspot = (id) => request.delete(`/intel/appeal-hotspots/${id}`)
+export const importAppealHotspots = (data) => request.post('/intel/appeal-hotspots/import', data)

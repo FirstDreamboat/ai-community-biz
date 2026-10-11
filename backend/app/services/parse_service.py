@@ -91,6 +91,14 @@ async def parse_and_verify_one(db, ann: Announcement, with_verify: bool = True) 
     if verify["status"] != 1:
         # 不通过/待人工：不自动生成商机
         ann.parse_status = 1 if verify["status"] == 2 else 3
+        # 竞品监测：被拒公告中的「中标/结果」类恰是竞品动态的主要来源
+        # （核验通过的都是招标类公告，不会含竞品中标信息），故在此处也检测
+        try:
+            competitor_service.detect_competitors(
+                db, ann.title, ann.content or "", announcement_id=ann.id
+            )
+        except Exception as e:  # noqa: BLE001
+            logger.warning("竞品监测异常（不影响主流程）: %s", e)
         db.commit()
         return {"ann_id": ann.id, "source": source, "verify_status": verify["status"],
                 "opportunity_id": None, "error": None}

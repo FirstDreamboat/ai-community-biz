@@ -10,6 +10,7 @@ from app.models.opportunity import (
     CompetitorRecord,
     FollowUpLog,
     Opportunity,
+    PushRecord,
 )
 from app.schemas.opportunity import (
     OpportunityDetail,
@@ -134,8 +135,20 @@ def get_opportunity_detail(db: Session, opp_id: int) -> OpportunityDetail:
 
     competitors = db.execute(
         select(CompetitorRecord).where(
-            CompetitorRecord.profile_id == (profile.id if profile else -1)
+            or_(
+                CompetitorRecord.profile_id == (profile.id if profile else -1),
+                CompetitorRecord.announcement_id == (
+                    profile.announcement_id if profile else -1
+                ),
+            )
         )
+    ).scalars().all()
+
+    push_records = db.execute(
+        select(PushRecord)
+        .where(PushRecord.opportunity_id == opp_id)
+        .order_by(PushRecord.created_at.desc())
+        .limit(10)
     ).scalars().all()
 
     item = OpportunityListItem(
@@ -154,9 +167,20 @@ def get_opportunity_detail(db: Session, opp_id: int) -> OpportunityDetail:
         source_url=announcement.source_url if announcement else None,
         verify_status=opp.verify_status,
         verify_note=opp.verify_note,
+        owner_id=opp.owner_id,
     )
+    owner_name = None
+    if opp.owner_id:
+        from app.models.sys import SysUser
+
+        owner = db.execute(
+            select(SysUser).where(SysUser.id == opp.owner_id)
+        ).scalar_one_or_none()
+        if owner:
+            owner_name = owner.real_name or owner.username
     return OpportunityDetail(
         opportunity=item,
+        owner_name=owner_name,
         profile=ProjectProfileOut.model_validate(profile) if profile else None,
         score_detail={
             "total": opp.total_score,
@@ -174,6 +198,10 @@ def get_opportunity_detail(db: Session, opp_id: int) -> OpportunityDetail:
                      for l in follow_logs],
         competitors=[{"id": c.id, "competitor": c.competitor, "result": c.result,
                       "amount": c.amount} for c in competitors],
+        push_records=[{"id": p.id, "push_channel": p.push_channel, "status": p.status,
+                       "receiver": p.receiver,
+                       "created_at": p.created_at.isoformat() if p.created_at else None}
+                      for p in push_records],
     )
 
 

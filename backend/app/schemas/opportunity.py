@@ -21,6 +21,7 @@ class OpportunityListItem(BaseModel):
     source_url: str | None = None
     verify_status: int = 0
     verify_note: str | None = None
+    owner_id: int | None = None
 
 
 class ScoreDetail(BaseModel):
@@ -60,6 +61,8 @@ class OpportunityDetail(BaseModel):
     strategy: dict | None = None
     follow_logs: list[dict] = []
     competitors: list[dict] = []
+    push_records: list[dict] = []
+    owner_name: str | None = None
 
 
 class FollowUpCreate(BaseModel):
